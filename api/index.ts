@@ -359,4 +359,7 @@ app.delete('/api/workflows/:id', authMiddleware, async (req, res) => {
   catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-export default app;
+// Vercel serverless handler
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  return app(req as any, res as any);
+}
