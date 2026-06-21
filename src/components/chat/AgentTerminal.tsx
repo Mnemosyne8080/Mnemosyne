@@ -5,10 +5,11 @@ import { Loader2 } from 'lucide-react';
 interface AgentTerminalProps {
   agentName: string;
   isProcessing: boolean;
+  nextStageLoading?: string | null;
   thoughtStream?: string[];
 }
 
-export function AgentTerminal({ agentName, isProcessing, thoughtStream = [] }: AgentTerminalProps) {
+export function AgentTerminal({ agentName, isProcessing, nextStageLoading, thoughtStream = [] }: AgentTerminalProps) {
   const [isOpen, setIsOpen] = useState(isProcessing);
   const [dots, setDots] = useState('');
 
@@ -24,7 +25,7 @@ export function AgentTerminal({ agentName, isProcessing, thoughtStream = [] }: A
     return () => clearInterval(interval);
   }, [isProcessing]);
 
-  if (!isProcessing && thoughtStream.length === 0) return null;
+  if (!isProcessing && !nextStageLoading && thoughtStream.length === 0) return null;
 
   return (
     <div className="my-4 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full max-w-3xl mx-auto">
@@ -38,10 +39,16 @@ export function AgentTerminal({ agentName, isProcessing, thoughtStream = [] }: A
         )}
       >
         <div className="flex items-center gap-2">
-          {isProcessing && (
+          {(isProcessing || nextStageLoading) && (
             <Loader2 className="w-4 h-4 animate-spin" />
           )}
-          {agentName} // {isProcessing ? `THINKING${dots}` : 'DONE'}
+          {agentName} // {
+            nextStageLoading
+              ? `LOADING ${nextStageLoading}...`
+              : isProcessing
+                ? `THINKING${dots}`
+                : 'DONE'
+          }
         </div>
         <div>
           {isOpen ? '[− COLLAPSE]' : '[+ EXPAND]'}

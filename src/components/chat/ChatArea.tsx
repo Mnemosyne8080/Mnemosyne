@@ -33,7 +33,9 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
   const [inputTimer, setInputTimer] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [thoughtStream, setThoughtStream] = useState<string[]>([]);
+  const [nextStageLoading, setNextStageLoading] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isChainedCall = useRef(false);
 
   const conversations = getUserConversations();
   const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -64,8 +66,13 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
         addMessage(activeConversation.id, { role: 'user', content: text });
     }
     setInputTimer('');
-    setIsProcessing(true);
-    setThoughtStream(['[SYSTEM] Initializing LLM uplink...', `[SYSTEM] Contacting ${settings.modelName}...`]);
+
+    if (!isChainedCall.current) {
+      setIsProcessing(true);
+      setThoughtStream(['[SYSTEM] Initializing LLM uplink...', `[SYSTEM] Contacting ${settings.modelName}...`]);
+    } else {
+      setThoughtStream(prev => [...prev, `[SYSTEM] Stage complete. Loading next stage...`]);
+    }
 
     try {
        // Refresh active conversation messages for call
@@ -108,11 +115,9 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
        // Stage Advancement Logic based on agent output
        if (currentStage === 'INTAKE') {
            if (activeConversation.messages.length <= 1) {
-             // Auto-rename chat: ask LLM for a concise 2-4 word topic
              const titleText = responseText || text;
              const cleanTitle = titleText.replace(/\*\*/g, '').replace(/\n/g, ' ').trim();
              updateTitle(activeConversation.id, cleanTitle.slice(0, 50));
-             // Request a short topic name from the LLM
              const titleResponse = await callLLM(
                [
                  ...currentMessages,
@@ -127,14 +132,21 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
              }
            }
            updateStage(activeConversation.id, 'CLARIFY');
+           setNextStageLoading('CLARIFY');
+           isChainedCall.current = true;
            handleSend('Please begin the clarification phase.', true);
+           isChainedCall.current = false;
+           setNextStageLoading(null);
        }
 
     } catch (e: any) {
         setThoughtStream(prev => [...prev, `[ERROR] ${e.message}`]);
         addMessage(activeConversation.id, { role: 'assistant', content: `**SYSTEM FAILURE:** ${e.message}` });
     } finally {
-        setIsProcessing(false);
+        if (!isChainedCall.current) {
+          setIsProcessing(false);
+          setNextStageLoading(null);
+        }
     }
   };
 
@@ -254,10 +266,11 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
           </div>
         ))}
         
-        <AgentTerminal 
+        <AgentTerminal
           agentName={getAgentName()}
-          isProcessing={isProcessing} 
-          thoughtStream={thoughtStream} 
+          isProcessing={isProcessing}
+          nextStageLoading={nextStageLoading}
+          thoughtStream={thoughtStream}
         />
       </div>
 
