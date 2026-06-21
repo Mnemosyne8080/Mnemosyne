@@ -166,7 +166,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     const sendEvent = (event: string, data: any) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     const openai = new OpenAI({ apiKey, baseURL: baseUrl || 'https://api.openai.com/v1' });
-    const { executeAgents } = await import('../src/server/agents');
+    const { executeAgents } = await import('../src/server/agents/index.ts');
     await executeAgents({ openai, model: model || 'gpt-4o', messages, sendEvent, plan: currentPlan });
     res.end();
   } catch (error: any) {
