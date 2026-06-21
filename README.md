@@ -66,6 +66,14 @@ src/
   types.ts                     — Core domain types
 ```
 
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `DISABLE_HMR` | Set to `"true"` to disable HMR (used in AI Studio) |
+
 ## Deployment
 
 This project is configured for Vercel deployment. Connect the repository, set the Supabase environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`), and deploy.
