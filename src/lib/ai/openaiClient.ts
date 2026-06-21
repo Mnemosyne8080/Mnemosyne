@@ -53,7 +53,7 @@ Format:
     "researchSummary": "Summary of findings from research phase"
   }
 }`,
-    FINALIZER: `You are the Architect Subagent. Create a Kanban Execution Board.
+    FINALIZER: `You are the Architect Subagent. Using the compiled brief and all prior context, create a comprehensive, actionable execution plan organized as a Kanban board.
 Output a JSON block wrapped in \`\`\`json.
 Format:
 {
@@ -61,20 +61,44 @@ Format:
   "data": {
     "columns": [
       {
-        "id": "30", "title": "Days 1-30",
-        "tasks": [{ "id": "t1", "desc": "Market validation" }, { "id": "t2", "desc": "Domain registration" }]
+        "id": "foundation",
+        "title": "Phase 1 — Foundation",
+        "tasks": [
+          { "id": "f1", "desc": "Task description", "detail": "Specific actionable detail", "deliverable": "What to produce" }
+        ]
       },
       {
-        "id": "60", "title": "Days 31-60",
-        "tasks": [{ "id": "t3", "desc": "MVP Development" }]
+        "id": "build",
+        "title": "Phase 2 — Build",
+        "tasks": [
+          { "id": "b1", "desc": "Task description", "detail": "Specific actionable detail", "deliverable": "What to produce" }
+        ]
       },
       {
-        "id": "90", "title": "Days 61-90",
-        "tasks": [{ "id": "t4", "desc": "Soft launch" }]
+        "id": "launch",
+        "title": "Phase 3 — Launch",
+        "tasks": [
+          { "id": "l1", "desc": "Task description", "detail": "Specific actionable detail", "deliverable": "What to produce" }
+        ]
+      },
+      {
+        "id": "grow",
+        "title": "Phase 4 — Grow",
+        "tasks": [
+          { "id": "g1", "desc": "Task description", "detail": "Specific actionable detail", "deliverable": "What to produce" }
+        ]
       }
     ]
   }
-}`
+}
+
+Rules:
+- Each phase should have 3-6 tasks minimum.
+- Every task must have "desc" (short title), "detail" (1-2 sentences of specifics), and "deliverable" (tangible output).
+- Tasks should be concrete and actionable, not vague.
+- Tailor the plan to the user's specific idea, audience, constraints, and risk profile from earlier phases.
+- Include tasks for: setup/infrastructure, core features, content/UX, testing, launch prep, and post-launch growth.
+- Use the user's stated budget, timeline, and technical comfort level from clarifications.`
   };
 
   const formattedMessages = [
