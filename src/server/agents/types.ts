@@ -15,6 +15,5 @@ export type AgentContext = {
   model: string;
   messages: any[];
   sendEvent: (event: string, data: any) => void;
-  toolsEnabled: any;
   plan: typeof PLAN_SCHEMA;
 };

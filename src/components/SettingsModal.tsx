@@ -1,13 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Settings as SettingsIcon, X, Check } from 'lucide-react';
-import { cn } from './utils';
+import { Settings as SettingsIcon, X } from 'lucide-react';
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
-  const { baseUrl, modelName, apiKey, toolsEnabled, setBaseUrl, setModelName, setApiKey, toggleTool } = useAppStore();
+  const { baseUrl, modelName, apiKey, setBaseUrl, setModelName, setApiKey, clearChat } = useAppStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -16,12 +14,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  // Close on backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
-
-  const toolEntries = Object.entries(toolsEnabled) as [keyof typeof toolsEnabled, boolean][];
 
   return (
     <div
@@ -30,7 +25,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
     >
       <div
         ref={panelRef}
-        className="panel-brutal-static max-w-md w-full bg-[var(--color-surface)] max-h-[90vh] overflow-y-auto animate-slide-up"
+        className="panel-brutal-static max-w-md w-full bg-[var(--color-surface)] max-h-[90vh] overflow-y-auto animate-scale-in"
       >
         {/* Header */}
         <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b-2 border-[var(--color-border)]">
@@ -93,48 +88,39 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               Stored locally in your browser.
             </p>
           </div>
-
-          {/* Divider */}
-          <div className="border-t-2 border-[var(--color-border)] pt-5">
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-secondary)] mb-4">
-              Enabled Tools
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {toolEntries.map(([tool, enabled]) => (
-                <label
-                  key={tool}
-                  className="flex items-center gap-2.5 cursor-pointer group py-1"
-                >
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => toggleTool(tool)}
-                      className="peer sr-only"
-                    />
-                    <div className={cn(
-                      "w-5 h-5 border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-all duration-150 flex items-center justify-center",
-                      enabled && "bg-[var(--color-border)]"
-                    )}>
-                      {enabled && (
-                        <Check className="w-3 h-3 text-[var(--color-base)]" strokeWidth={3} />
-                      )}
-                    </div>
-                  </div>
-                  <span className="font-mono text-xs uppercase text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
-                    {tool.replace('_', ' ')}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t-2 border-[var(--color-border)] flex justify-end">
-          <button onClick={onClose} className="btn-brutal-dark">
-            Done
-          </button>
+        <div className="px-6 py-4 border-t-2 border-[var(--color-border)] space-y-3">
+          {/* Keyboard shortcuts hint */}
+          <div className="font-mono text-[9px] text-[var(--color-text-muted)] flex flex-wrap gap-x-3 gap-y-1">
+            <span>⌘K Focus input</span>
+            <span>⌘/ Settings</span>
+            <span>⌘N New chat</span>
+            <span>Esc Close</span>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="border-t-2 border-[var(--color-border)] pt-3">
+            <button
+              onClick={() => {
+                if (confirm('Clear all stored data? This cannot be undone.')) {
+                  localStorage.clear();
+                  clearChat();
+                  window.location.reload();
+                }
+              }}
+              className="btn-brutal text-[11px] border-[var(--color-error)] text-[var(--color-error)] hover:bg-[var(--color-error)] hover:text-white"
+            >
+              Clear All Data
+            </button>
+          </div>
+
+          <div className="flex justify-end">
+            <button onClick={onClose} className="btn-brutal-dark">
+              Done
+            </button>
+          </div>
         </div>
       </div>
     </div>
