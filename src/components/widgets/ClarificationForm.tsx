@@ -16,10 +16,11 @@ interface ClarificationFormProps {
     }>;
   };
   onSubmit: (responses: Record<string, any>) => void;
+  onSkip?: () => void;
   isSubmitted: boolean;
 }
 
-export function ClarificationForm({ data, onSubmit, isSubmitted }: ClarificationFormProps) {
+export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: ClarificationFormProps) {
   const [responses, setResponses] = useState<Record<string, any>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,13 +100,25 @@ export function ClarificationForm({ data, onSubmit, isSubmitted }: Clarification
             )}
           </div>
         ))}
-        <Button 
-          type="submit" 
-          disabled={isSubmitted} 
-          className="w-full text-lg mt-4"
-        >
-          {isSubmitted ? 'RESPONSES SUBMITTED' : '[SUBMIT RESPONSES TO SUBAGENT]'}
-        </Button>
+        <div className="flex gap-3 mt-4">
+          <Button
+            type="submit"
+            disabled={isSubmitted}
+            className="flex-1 text-lg"
+          >
+            {isSubmitted ? 'RESPONSES SUBMITTED' : '[SUBMIT RESPONSES]'}
+          </Button>
+          {!isSubmitted && onSkip && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onSkip}
+              className="flex-1 text-lg"
+            >
+              [SKIP &amp; PROCEED]
+            </Button>
+          )}
+        </div>
       </form>
     </Card>
   );

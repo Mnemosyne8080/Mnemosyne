@@ -10,7 +10,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onOpenSettings }: SidebarProps) {
-  const { conversations, activeConversationId, setActiveConversation, createConversation, deleteConversation, updateTitle } = useWorkflowStore();
+  const { conversations, activeConversationId, setActiveConversation, createConversation, deleteConversation, updateTitle, userId } = useWorkflowStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -46,7 +46,7 @@ export function Sidebar({ onOpenSettings }: SidebarProps) {
         <Button
           variant="secondary"
           className="w-full justify-start font-black bg-black text-white hover:bg-gray-800"
-          onClick={() => createConversation()}
+          onClick={() => createConversation(userId || 'local')}
         >
           <PlusCircle className="mr-2 w-5 h-5" />
           [+ NEW TRACK]

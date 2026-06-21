@@ -19,13 +19,14 @@ interface ChatAreaProps {
 }
 
 export function ChatArea({ onOpenSettings }: ChatAreaProps) {
-  const { 
-    conversations, 
-    activeConversationId, 
-    addMessage, 
+  const {
+    getUserConversations,
+    activeConversationId,
+    addMessage,
     updateStage,
     createConversation,
-    updateTitle
+    updateTitle,
+    userId
   } = useWorkflowStore();
   const { settings, isConfigured } = useSettingsStore();
 
@@ -34,6 +35,7 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
   const [thoughtStream, setThoughtStream] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const conversations = getUserConversations();
   const activeConversation = conversations.find(c => c.id === activeConversationId);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-50 flex-col">
         <h2 className="font-mono text-xl font-bold uppercase tracking-widest text-gray-500 mb-4">No Active Execution Track</h2>
-        <Button onClick={() => createConversation()}>INITIALIZE NEW TRACK</Button>
+        <Button onClick={() => createConversation(userId || 'local')}>INITIALIZE NEW TRACK</Button>
       </div>
     );
   }
@@ -111,8 +113,19 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
       role: 'user',
       content: `Clarifications submitted — ${formatted}`
     });
-    updateStage(activeConversation.id, 'RESEARCH');
-    handleSend('I have submitted the clarification form.', true);
+
+    const clarifyMessages = activeConversation.messages.filter(
+      m => m.component === 'ClarificationForm'
+    ).length;
+
+    if (clarifyMessages >= 2) {
+      // Already had one follow-up round — move to RESEARCH
+      updateStage(activeConversation.id, 'RESEARCH');
+      handleSend('I have submitted the clarification form. That should be enough, please proceed to research.', true);
+    } else {
+      // Stay in CLARIFY for follow-up questions
+      handleSend('I have submitted the clarification form. Please ask me any follow-up questions if needed, or let me know when to proceed.', true);
+    }
   };
 
   const handleRiskDecision = (decision: string) => {
@@ -178,10 +191,14 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
             </div>
 
             {message.component === 'ClarificationForm' && (
-              <ClarificationForm 
-                data={message.componentData} 
+              <ClarificationForm
+                data={message.componentData}
                 isSubmitted={activeConversation.messages.findIndex(m => m.id === message.id) !== activeConversation.messages.length - 1}
-                onSubmit={handleClarificationSubmit} 
+                onSubmit={handleClarificationSubmit}
+                onSkip={() => {
+                  updateStage(activeConversation.id, 'RESEARCH');
+                  handleSend('I have submitted the clarification form. That should be enough, please proceed to research.', true);
+                }}
               />
             )}
             {message.component === 'RiskMatrix' && (

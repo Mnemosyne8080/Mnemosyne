@@ -4,25 +4,29 @@ import { AuthPage } from '../auth/AuthPage';
 import { Sidebar } from './Sidebar';
 import { ChatArea } from '../chat/ChatArea';
 import { SettingsModal } from './SettingsModal';
+import { useWorkflowStore } from '../../store/useWorkflowStore';
 
 export function MainApp() {
   const [session, setSession] = useState<any>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const setUserId = useWorkflowStore((s) => s.setUserId);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setUserId(session?.user?.id ?? null);
       setLoading(false);
     }).catch(() => {
-      // Catch network errors if supabase isn't configured
       setLoading(false);
+      setUserId(null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setUserId(session?.user?.id ?? null);
     });
 
     return () => subscription.unsubscribe();
