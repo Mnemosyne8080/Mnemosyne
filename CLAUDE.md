@@ -38,7 +38,7 @@ HMR can be disabled via the `DISABLE_HMR=true` environment variable. This is use
 
 ### Core Domain Types (`src/types.ts`)
 - **`WorkflowStage`**: `'INTAKE' | 'CLARIFY' | 'RESEARCH' | 'COMPILE' | 'FINALIZER'` — the five stages of the workflow
-- **`AppSettings`**: `{ baseUrl, apiKey, modelName }` — LLM endpoint configuration
+- **`AppSettings`**: `{ baseUrl, apiKey, modelName, email? }` — LLM endpoint configuration (email optional, for account recovery)
 - **`ChatMessage`**: Messages with optional structured component output (`ClarificationForm`, `RiskMatrix`, `CompiledBrief`, `ExecutionBoard`)
 - **`Conversation``: A workflow session with a title, current stage, and message history
 

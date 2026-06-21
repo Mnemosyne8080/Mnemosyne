@@ -86,8 +86,10 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
        // Stage Advancement Logic based on agent output
        if (currentStage === 'INTAKE') {
            if (activeConversation.messages.length <= 1) {
-             // Generate title based on first user message roughly
-             updateTitle(activeConversation.id, text.slice(0, 30) + '...');
+             // Auto-rename chat using the LLM summary from INTAKE response
+             const titleText = responseText || text.slice(0, 40);
+             const cleanTitle = titleText.replace(/\*\*/g, '').replace(/\n/g, ' ').trim().slice(0, 50);
+             updateTitle(activeConversation.id, cleanTitle);
            }
            updateStage(activeConversation.id, 'CLARIFY');
            handleSend('Please begin the clarification phase.', true);
