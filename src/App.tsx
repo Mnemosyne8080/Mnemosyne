@@ -20,17 +20,21 @@ export default function App() {
   const { user, isAuthenticated, setUser, logout, clearChat, createNewConversation, loadConversation, setCurrentConversationId } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Check session on mount
+  // Check session on mount only
   useEffect(() => {
     if (!user) {
       fetch('/api/auth/session', { credentials: 'include' })
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) return null;
+          return r.json();
+        })
         .then((data) => {
-          if (data.user) setUser(data.user);
+          if (data?.user) setUser(data.user);
         })
         .catch(() => {});
     }
-  }, [user, setUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -46,7 +50,12 @@ export default function App() {
   });
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      if (!res.ok) console.error('Logout request failed');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     logout();
   };
 

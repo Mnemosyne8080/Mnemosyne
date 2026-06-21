@@ -56,40 +56,92 @@ CREATE INDEX IF NOT EXISTS idx_plans_user_id ON plans(user_id);
 CREATE INDEX IF NOT EXISTS idx_workflows_user_id ON workflows(user_id);
 CREATE INDEX IF NOT EXISTS idx_workflows_conversation_id ON workflows(conversation_id);
 
--- RLS Policies
+-- Enable RLS on all tables
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workflows ENABLE ROW LEVEL SECURITY;
 
+-- Grant access to authenticated role (required for Data API)
+GRANT SELECT, INSERT, UPDATE, DELETE ON conversations TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON messages TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON plans TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON workflows TO authenticated;
+
+-- Also grant anon for the auth flow to work
+GRANT SELECT ON conversations TO anon;
+GRANT SELECT ON messages TO anon;
+GRANT SELECT ON plans TO anon;
+GRANT SELECT ON workflows TO anon;
+
 -- Conversations policies
-CREATE POLICY "Users can view own conversations" ON conversations FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own conversations" ON conversations FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own conversations" ON conversations FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own conversations" ON conversations FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own conversations" ON conversations
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can insert own conversations" ON conversations
+  FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own conversations" ON conversations
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own conversations" ON conversations
+  FOR DELETE TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
 
 -- Messages policies
-CREATE POLICY "Users can view messages in own conversations" ON messages FOR SELECT USING (
-  conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid())
-);
-CREATE POLICY "Users can insert messages in own conversations" ON messages FOR INSERT WITH CHECK (
-  conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid())
-);
-CREATE POLICY "Users can update messages in own conversations" ON messages FOR UPDATE USING (
-  conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid())
-);
-CREATE POLICY "Users can delete messages in own conversations" ON messages FOR DELETE USING (
-  conversation_id IN (SELECT id FROM conversations WHERE user_id = auth.uid())
-);
+CREATE POLICY "Users can view messages in own conversations" ON messages
+  FOR SELECT TO authenticated
+  USING (conversation_id IN (SELECT id FROM conversations WHERE user_id = (SELECT auth.uid())));
+
+CREATE POLICY "Users can insert messages in own conversations" ON messages
+  FOR INSERT TO authenticated
+  WITH CHECK (conversation_id IN (SELECT id FROM conversations WHERE user_id = (SELECT auth.uid())));
+
+CREATE POLICY "Users can update messages in own conversations" ON messages
+  FOR UPDATE TO authenticated
+  USING (conversation_id IN (SELECT id FROM conversations WHERE user_id = (SELECT auth.uid())))
+  WITH CHECK (conversation_id IN (SELECT id FROM conversations WHERE user_id = (SELECT auth.uid())));
+
+CREATE POLICY "Users can delete messages in own conversations" ON messages
+  FOR DELETE TO authenticated
+  USING (conversation_id IN (SELECT id FROM conversations WHERE user_id = (SELECT auth.uid())));
 
 -- Plans policies
-CREATE POLICY "Users can view own plans" ON plans FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own plans" ON plans FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own plans" ON plans FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own plans" ON plans FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own plans" ON plans
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can insert own plans" ON plans
+  FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own plans" ON plans
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own plans" ON plans
+  FOR DELETE TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
 
 -- Workflows policies
-CREATE POLICY "Users can view own workflows" ON workflows FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own workflows" ON workflows FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own workflows" ON workflows FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own workflows" ON workflows FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own workflows" ON workflows
+  FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can insert own workflows" ON workflows
+  FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can update own workflows" ON workflows
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+
+CREATE POLICY "Users can delete own workflows" ON workflows
+  FOR DELETE TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
