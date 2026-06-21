@@ -37,7 +37,7 @@ export function MainApp() {
   }
 
   if (!session) {
-    return <AuthPage onBypass={() => setSession({ user: { id: 'demo' } })} />;
+    return <AuthPage />;
   }
 
   return (

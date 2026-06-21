@@ -4,6 +4,7 @@ export interface AppSettings {
   baseUrl: string;
   apiKey: string;
   modelName: string;
+  email?: string;
 }
 
 export interface ChatMessage {

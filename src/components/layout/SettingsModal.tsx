@@ -50,11 +50,22 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         
         <div className="space-y-2">
           <label className="font-mono text-sm font-bold uppercase tracking-wider">Model Name</label>
-          <Input 
+          <Input
             value={localSettings.modelName}
             onChange={(e) => setLocalSettings({...localSettings, modelName: e.target.value})}
             placeholder="gpt-4o"
           />
+        </div>
+
+        <div className="space-y-2 pt-4 border-t-2 border-black">
+          <label className="font-mono text-sm font-bold uppercase tracking-wider">Email (optional)</label>
+          <Input
+            type="email"
+            value={localSettings.email || ''}
+            onChange={(e) => setLocalSettings({...localSettings, email: e.target.value})}
+            placeholder="you@example.com"
+          />
+          <p className="font-mono text-xs text-gray-500">For account recovery and notifications.</p>
         </div>
 
         <Button variant="secondary" className="w-full mt-4" onClick={handleSave}>

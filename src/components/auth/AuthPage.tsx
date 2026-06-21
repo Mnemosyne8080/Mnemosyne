@@ -4,26 +4,42 @@ import { Card, CardHeader, CardTitle } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
-export function AuthPage({ onBypass }: { onBypass?: () => void }) {
+export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const usernameToEmail = (uname: string) => `${uname.toLowerCase().replace(/[^a-z0-9]/g, '')}@mnemosyne.app`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters.');
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    const derivedEmail = usernameToEmail(username);
+
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: derivedEmail, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ email: derivedEmail, password });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        alert('Account created! You can now log in.');
+        setIsLogin(true);
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -47,13 +63,14 @@ export function AuthPage({ onBypass }: { onBypass?: () => void }) {
           )}
 
           <div className="space-y-2">
-            <label className="font-mono text-sm font-bold uppercase tracking-wider">Email</label>
+            <label className="font-mono text-sm font-bold uppercase tracking-wider">Username</label>
             <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
-              placeholder="you@example.com"
+              placeholder="your_username"
+              autoComplete="username"
             />
           </div>
 
@@ -65,6 +82,7 @@ export function AuthPage({ onBypass }: { onBypass?: () => void }) {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
           </div>
 
@@ -72,7 +90,7 @@ export function AuthPage({ onBypass }: { onBypass?: () => void }) {
             {loading ? 'Please wait...' : isLogin ? 'Log In' : 'Sign Up'}
           </Button>
 
-          <div className="pt-4 border-t-2 border-black mt-6 text-center space-y-4 flex flex-col">
+          <div className="pt-4 border-t-2 border-black mt-6 text-center">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -80,15 +98,6 @@ export function AuthPage({ onBypass }: { onBypass?: () => void }) {
             >
               {isLogin ? 'Create an account' : 'Already have an account? Log in'}
             </button>
-            {onBypass && (
-               <button
-                type="button"
-                onClick={onBypass}
-                className="font-mono text-xs text-gray-500 hover:text-black transition-colors"
-                >
-                [ Try the demo without signing up ]
-               </button>
-            )}
           </div>
         </form>
       </Card>
