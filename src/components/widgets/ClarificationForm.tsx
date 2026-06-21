@@ -8,7 +8,7 @@ interface ClarificationFormProps {
   data: {
     questions: Array<{
       id: string;
-      type: 'text' | 'textarea' | 'radio' | 'slider' | 'boolean' | 'scale';
+      type: 'text' | 'textarea' | 'radio' | 'slider' | 'boolean' | 'scale' | 'multiselect';
       label: string;
       context?: string;
       options?: string[];
@@ -170,6 +170,47 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                   <span>{q.min} — Low</span>
                   <span>{q.max} — High</span>
                 </div>
+              </div>
+            )}
+
+            {q.type === 'multiselect' && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {q.options?.map(opt => {
+                    const selected: string[] = responses[q.id] || [];
+                    const isSelected = selected.includes(opt);
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        disabled={isSubmitted}
+                        onClick={() => {
+                          const current: string[] = responses[q.id] || [];
+                          if (isSelected) {
+                            setResponses({ ...responses, [q.id]: current.filter(v => v !== opt) });
+                          } else {
+                            setResponses({ ...responses, [q.id]: [...current, opt] });
+                          }
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 font-mono text-sm border-2 border-black transition-all flex items-center gap-1.5",
+                          isSelected
+                            ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white text-black hover:bg-gray-100 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.3)]"
+                        )}
+                      >
+                        <span className={cn(
+                          "w-3 h-3 border-2 flex-shrink-0 flex items-center justify-center text-[8px]",
+                          isSelected ? "border-white bg-white text-black" : "border-gray-400"
+                        )}>
+                          {isSelected && '✓'}
+                        </span>
+                        {opt}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="font-mono text-[10px] text-gray-400 uppercase">Select one or more</p>
               </div>
             )}
           </div>

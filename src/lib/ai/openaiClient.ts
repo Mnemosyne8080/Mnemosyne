@@ -23,6 +23,7 @@ Available question types:
 - "textarea": multi-line text. { "id": "q4", "type": "textarea", "label": "Your question" }
 - "boolean": yes/no. { "id": "q5", "type": "boolean", "label": "Your question" }
 - "scale": 1-10 rating. { "id": "q6", "type": "scale", "label": "Your question", "min": 1, "max": 10 }
+- "multiselect": multiple choices. { "id": "q7", "type": "multiselect", "label": "Your question", "options": ["Option A", "Option B", "Option C"] }
 
 Rules:
 - Use a mix of question types (not all text).
@@ -38,7 +39,8 @@ Format:
       { "id": "q1", "type": "textarea", "label": "What problem does this solve?", "context": "Understanding the core pain point helps scope the solution" },
       { "id": "q2", "type": "radio", "label": "Who is the primary user?", "options": ["Consumers", "Small businesses", "Enterprises", "Developers"] },
       { "id": "q3", "type": "slider", "label": "What is your budget (USD)?", "min": 0, "max": 50000, "step": 1000 },
-      { "id": "q4", "type": "boolean", "label": "Do you have existing user research?" }
+      { "id": "q4", "type": "boolean", "label": "Do you have existing user research?" },
+      { "id": "q5", "type": "multiselect", "label": "Which features are must-haves?", "options": ["User accounts", "Search", "Payments", "Reviews", "Admin panel"] }
     ]
   }
 }` + NO_TOOL_CALLS,
