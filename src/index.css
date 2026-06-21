@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-black font-sans antialiased;
+  }
+  
+  /* Brutalist button style */
+  .btn-brutal {
+    @apply border-2 border-black bg-white px-4 py-2 font-mono text-sm font-bold uppercase tracking-widest text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  }
+  
+  .btn-brutal-dark {
+    @apply border-2 border-black bg-black px-4 py-2 font-mono text-sm font-bold uppercase tracking-widest text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  }
+
+  .panel-brutal {
+    @apply border-2 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)];
+  }
+  
+  .input-brutal {
+    @apply border-2 border-black bg-white px-4 py-2 font-mono text-sm focus:outline-none focus:ring-0;
+  }
+}
+
