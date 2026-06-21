@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
+import { getConversations, deleteConversation, updateConversation, createConversation } from '../lib/supabase/services';
 import { Plus, Trash2, MessageSquare, ChevronRight } from 'lucide-react';
 
 interface ConversationListProps {
@@ -8,7 +9,7 @@ interface ConversationListProps {
 }
 
 export function ConversationList({ onSelect, currentId }: ConversationListProps) {
-  const { user, conversations, setConversations, setCurrentConversationId, loadConversations, createNewConversation, deleteConversation, renameConversation } = useAppStore();
+  const { user, conversations, setConversations, setCurrentConversationId } = useAppStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -17,23 +18,41 @@ export function ConversationList({ onSelect, currentId }: ConversationListProps)
     if (user) {
       loadConversations();
     }
-  }, [user, loadConversations]);
+  }, [user]);
+
+  async function loadConversations() {
+    if (!user) return;
+    try {
+      const convs = await getConversations(user.id);
+      setConversations(convs);
+    } catch {
+      // silently fail
+    }
+  }
 
   async function handleNewChat() {
     if (!user) return;
-    const id = await createNewConversation();
-    if (id) {
-      setCurrentConversationId(id);
-      onSelect(id);
+    try {
+      const conv = await createConversation(user.id);
+      setConversations([conv, ...conversations]);
+      setCurrentConversationId(conv.id);
+      onSelect(conv.id);
+    } catch {
+      // silently fail
     }
   }
 
   async function handleDelete(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     if (!confirm('Delete this conversation?')) return;
-    await deleteConversation(id);
-    if (currentId === id) {
-      setCurrentConversationId(null);
+    try {
+      await deleteConversation(id);
+      setConversations(conversations.filter((c) => c.id !== id));
+      if (currentId === id) {
+        setCurrentConversationId(null);
+      }
+    } catch {
+      // silently fail
     }
   }
 
@@ -48,10 +67,14 @@ export function ConversationList({ onSelect, currentId }: ConversationListProps)
       setEditingId(null);
       return;
     }
-    await renameConversation(id, editTitle.trim());
-    setConversations(
-      conversations.map((c) => (c.id === id ? { ...c, title: editTitle.trim() } : c))
-    );
+    try {
+      await updateConversation(id, { title: editTitle.trim() });
+      setConversations(
+        conversations.map((c) => (c.id === id ? { ...c, title: editTitle.trim() } : c))
+      );
+    } catch {
+      // silently fail
+    }
     setEditingId(null);
   }
 
