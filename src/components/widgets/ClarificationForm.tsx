@@ -8,11 +8,13 @@ interface ClarificationFormProps {
   data: {
     questions: Array<{
       id: string;
-      type: 'text' | 'radio' | 'slider';
+      type: 'text' | 'textarea' | 'radio' | 'slider' | 'boolean' | 'scale';
       label: string;
+      context?: string;
       options?: string[];
       min?: number;
       max?: number;
+      step?: number;
     }>;
   };
   onSubmit: (responses: Record<string, any>) => void;
@@ -38,13 +40,31 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
       <form onSubmit={handleSubmit} className="space-y-6">
         {data.questions.map((q) => (
           <div key={q.id} className="space-y-2">
-            <label className="font-mono text-sm font-bold uppercase">{q.label}</label>
+            <label className="font-mono text-sm font-bold uppercase block">{q.label}</label>
+            {q.context && (
+              <p className="font-mono text-xs text-gray-500 italic">({q.context})</p>
+            )}
+
             {q.type === 'text' && (
-              <Input 
+              <Input
                 disabled={isSubmitted}
+                value={responses[q.id] || ''}
                 onChange={(e) => setResponses({ ...responses, [q.id]: e.target.value })}
+                placeholder="Type your answer..."
               />
             )}
+
+            {q.type === 'textarea' && (
+              <textarea
+                disabled={isSubmitted}
+                value={responses[q.id] || ''}
+                onChange={(e) => setResponses({ ...responses, [q.id]: e.target.value })}
+                placeholder="Type your answer..."
+                rows={3}
+                className="w-full px-3 py-2 border-2 border-black font-mono text-sm bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] resize-none"
+              />
+            )}
+
             {q.type === 'radio' && (
               <div className="flex flex-wrap gap-2">
                 {q.options?.map(opt => (
@@ -65,6 +85,7 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                 ))}
               </div>
             )}
+
             {q.type === 'slider' && (
               <div className="space-y-2">
                 <div className="flex items-center space-x-4">
@@ -72,6 +93,7 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                     type="range"
                     min={q.min}
                     max={q.max}
+                    step={q.step || 1}
                     disabled={isSubmitted}
                     value={responses[q.id] ?? q.min}
                     onChange={(e) => setResponses({ ...responses, [q.id]: Number(e.target.value) })}
@@ -81,6 +103,7 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                     type="number"
                     min={q.min}
                     max={q.max}
+                    step={q.step || 1}
                     disabled={isSubmitted}
                     value={responses[q.id] ?? q.min}
                     onChange={(e) => {
@@ -89,7 +112,7 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                         setResponses({ ...responses, [q.id]: val });
                       }
                     }}
-                    className="w-20 px-2 py-1 border-2 border-black font-mono font-bold text-center bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="w-24 px-2 py-1 border-2 border-black font-mono font-bold text-center bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   />
                 </div>
                 <div className="flex justify-between text-[10px] font-mono text-gray-400 uppercase">
@@ -98,8 +121,60 @@ export function ClarificationForm({ data, onSubmit, onSkip, isSubmitted }: Clari
                 </div>
               </div>
             )}
+
+            {q.type === 'boolean' && (
+              <div className="flex gap-3">
+                {['Yes', 'No'].map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={isSubmitted}
+                    onClick={() => setResponses({ ...responses, [q.id]: opt === 'Yes' })}
+                    className={cn(
+                      "px-4 py-2 font-mono text-sm font-bold border-2 border-black transition-all",
+                      responses[q.id] === (opt === 'Yes')
+                        ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        : "bg-white text-black hover:bg-gray-100 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.3)]"
+                    )}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {q.type === 'scale' && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  {Array.from({ length: (q.max ?? 10) - (q.min ?? 1) + 1 }, (_, i) => {
+                    const val = (q.min ?? 1) + i;
+                    return (
+                      <button
+                        key={val}
+                        type="button"
+                        disabled={isSubmitted}
+                        onClick={() => setResponses({ ...responses, [q.id]: val })}
+                        className={cn(
+                          "w-9 h-9 font-mono text-sm font-bold border-2 border-black transition-all",
+                          responses[q.id] === val
+                            ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            : "bg-white text-black hover:bg-gray-100"
+                        )}
+                      >
+                        {val}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-gray-400 uppercase">
+                  <span>{q.min} — Low</span>
+                  <span>{q.max} — High</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
+
         <div className="flex gap-3 mt-4">
           <Button
             type="submit"

@@ -11,18 +11,32 @@ export const callLLM = async (
 
   const systemPrompts: Record<WorkflowStage, string> = {
     INTAKE: `You are the Coordinator Agent. Your task is to take the user's ambiguous initial idea and structure it. Acknowledge their idea and then output a JSON block wrapped in \`\`\`json containing "next_stage": "CLARIFY" and a brief summary. Do not output anything else besides this summary.`,
-    CLARIFY: `You are the Inquisitor Subagent. You must halt generation and interview the user to clarify assumptions.
+    CLARIFY: `You are the Inquisitor Subagent. You must halt generation and interview the user to clarify assumptions about their idea.
+Generate 3-5 UNIQUE clarification questions tailored to the user's specific idea. Do NOT use generic placeholder questions — every question must be directly relevant to what the user described.
 Output a JSON block wrapped in \`\`\`json representing a ClarificationForm.
+Available question types:
+- "text": short text input. { "id": "q1", "type": "text", "label": "Your question here" }
+- "radio": single choice. { "id": "q2", "type": "radio", "label": "Your question", "options": ["Option A", "Option B", "Option C"] }
+- "slider": numeric range. { "id": "q3", "type": "slider", "label": "Your question", "min": 0, "max": 100, "step": 10 }
+- "textarea": multi-line text. { "id": "q4", "type": "textarea", "label": "Your question" }
+- "boolean": yes/no. { "id": "q5", "type": "boolean", "label": "Your question" }
+- "scale": 1-10 rating. { "id": "q6", "type": "scale", "label": "Your question", "min": 1, "max": 10 }
+
+Rules:
+- Use a mix of question types (not all text).
+- Questions must be specific to the user's idea, not generic.
+- For follow-up rounds, ask DIFFERENT questions that dig deeper based on previous answers.
+- Include a short "context" field (1 sentence) explaining why you're asking, shown above the question.
+
 Format:
 {
   "component": "ClarificationForm",
   "data": {
     "questions": [
-      { "id": "q1", "type": "text", "label": "What is the primary unfair advantage?" },
-      { "id": "q2", "type": "radio", "label": "Technical Comfort Level", "options": ["Low", "Medium", "High"] },
-      { "id": "q3", "type": "slider", "label": "Budget Scope ($)", "min": 0, "max": 10000 },
-      { "id": "q4", "type": "radio", "label": "How much time can you dedicate per week?", "options": ["2-5 hours", "5-10 hours", "10-20 hours", "20+ hours"] },
-      { "id": "q5", "type": "radio", "label": "Target launch timeline", "options": ["ASAP (1-2 weeks)", "1 month", "2-3 months", "3-6 months", "No rush"] }
+      { "id": "q1", "type": "textarea", "label": "What problem does this solve?", "context": "Understanding the core pain point helps scope the solution" },
+      { "id": "q2", "type": "radio", "label": "Who is the primary user?", "options": ["Consumers", "Small businesses", "Enterprises", "Developers"] },
+      { "id": "q3", "type": "slider", "label": "What is your budget (USD)?", "min": 0, "max": 50000, "step": 1000 },
+      { "id": "q4", "type": "boolean", "label": "Do you have existing user research?" }
     ]
   }
 }`,
