@@ -20,7 +20,9 @@ Format:
     "questions": [
       { "id": "q1", "type": "text", "label": "What is the primary unfair advantage?" },
       { "id": "q2", "type": "radio", "label": "Technical Comfort Level", "options": ["Low", "Medium", "High"] },
-      { "id": "q3", "type": "slider", "label": "Budget Scope ($)", "min": 0, "max": 10000 }
+      { "id": "q3", "type": "slider", "label": "Budget Scope ($)", "min": 0, "max": 10000 },
+      { "id": "q4", "type": "radio", "label": "How much time can you dedicate per week?", "options": ["2-5 hours", "5-10 hours", "10-20 hours", "20+ hours"] },
+      { "id": "q5", "type": "radio", "label": "Target launch timeline", "options": ["ASAP (1-2 weeks)", "1 month", "2-3 months", "3-6 months", "No rush"] }
     ]
   }
 }`,
@@ -97,8 +99,10 @@ Rules:
 - Every task must have "desc" (short title), "detail" (1-2 sentences of specifics), and "deliverable" (tangible output).
 - Tasks should be concrete and actionable, not vague.
 - Tailor the plan to the user's specific idea, audience, constraints, and risk profile from earlier phases.
+- Use the user's stated budget, timeline, and technical comfort level from clarifications.
+- Scale the plan to the user's available time per week and target launch timeline — a 20+ hour/week plan looks very different from a 2-5 hour/week plan.
 - Include tasks for: setup/infrastructure, core features, content/UX, testing, launch prep, and post-launch growth.
-- Use the user's stated budget, timeline, and technical comfort level from clarifications.`
+- Adjust phase durations and task granularity based on the timeline — shorter timelines need fewer, bigger tasks; longer timelines can be more granular.`
   };
 
   const formattedMessages = [
