@@ -108,10 +108,23 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
        // Stage Advancement Logic based on agent output
        if (currentStage === 'INTAKE') {
            if (activeConversation.messages.length <= 1) {
-             // Auto-rename chat using the LLM summary from INTAKE response
-             const titleText = responseText || text.slice(0, 40);
-             const cleanTitle = titleText.replace(/\*\*/g, '').replace(/\n/g, ' ').trim().slice(0, 50);
-             updateTitle(activeConversation.id, cleanTitle);
+             // Auto-rename chat: ask LLM for a concise 2-4 word topic
+             const titleText = responseText || text;
+             const cleanTitle = titleText.replace(/\*\*/g, '').replace(/\n/g, ' ').trim();
+             updateTitle(activeConversation.id, cleanTitle.slice(0, 50));
+             // Request a short topic name from the LLM
+             const titleResponse = await callLLM(
+               [
+                 ...currentMessages,
+                 { id: 'title-req', role: 'user', content: 'Reply with ONLY a concise 2-4 word topic title for this conversation. No quotes, no explanation, just the title.', timestamp: Date.now() }
+               ],
+               settings,
+               currentStage
+             );
+             const shortTitle = titleResponse.replace(/["\n]/g, '').trim().slice(0, 30);
+             if (shortTitle && shortTitle.length > 1) {
+               updateTitle(activeConversation.id, shortTitle);
+             }
            }
            updateStage(activeConversation.id, 'CLARIFY');
            handleSend('Please begin the clarification phase.', true);
