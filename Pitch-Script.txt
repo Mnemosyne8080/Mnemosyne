@@ -1,0 +1,102 @@
+# ⏱ 0:00 – 0:30 | The Problem
+
+Hello everyone!
+
+Picture this: it's 2 a.m., you've just had a brilliant idea, and you suddenly decide, *"I'm going to start an AI club!"*
+
+Fast forward to the next morning, and you're staring at a blank screen wondering:
+
+*"Okay... but how do I actually start a community?"*
+
+That's the problem we're solving.
+
+Students have amazing ideas every day, but turning those ideas into reality is hard. There's too much information, too many opinions online, and no clear starting point.
+
+People don't struggle because they lack motivation—they struggle because they don't know what their next step should be.
+
+---
+
+# ⏱ 0:30 – 1:30 | What Our AI Does
+
+That's where our solution comes in.
+
+We built an AI-powered Zero-to-One Builder that helps students move from *"I have an idea"* to *"I know exactly what to do next."*
+
+Let's say a student wants to create a community for people who are just getting started with AI.
+
+Instead of instantly generating a giant to-do list, our AI takes a smarter approach. It starts by asking a few important questions:
+
+• Who is your target audience?
+
+• What problem are you trying to solve?
+
+• What resources do you already have?
+
+• How much time can you realistically dedicate?
+
+Then, instead of pretending there's one perfect answer, the AI helps users understand the tradeoffs behind different choices.
+
+Should they start a Discord server?
+
+A school club?
+
+An Instagram page?
+
+Each option comes with its own benefits and challenges, and our AI clearly explains those differences.
+
+Finally, it generates a practical roadmap with milestones, achievable goals, and most importantly, a clear first step the user can take immediately.
+
+---
+
+# ⏱ 1:30 – 2:00 | The Impact
+
+This is where the real difference happens.
+
+Before using our tool, a student has:
+
+• A great idea
+
+• Lots of enthusiasm
+
+• Absolutely no clue where to begin
+
+After using our tool, they have:
+
+• A clearly defined audience
+
+• An understanding of potential risks
+
+• A realistic 90-day roadmap
+
+• One concrete action they can take today
+
+In short, we're helping students move from overthinking to actually building.
+
+---
+
+# ⏱ 2:00 – 2:30 | Responsible AI
+
+Of course, we know AI isn't magic.
+
+One risk is that users might assume AI recommendations are automatically the correct answer.
+
+To address this, our system presents multiple options, explains the reasoning behind each recommendation, and highlights uncertainty whenever it exists.
+
+Most importantly, the AI never makes the final decision.
+
+Goals, priorities, and personal circumstances are unique to every individual, so the user always remains in control.
+
+---
+
+# ⏱ 2:30 – 3:00 | What's Next?
+
+Looking ahead, we want to add progress tracking, community growth analytics, and adaptive planning that evolves as projects grow.
+
+Our vision is simple:
+
+Every successful community started as just an idea.
+
+We're building a tool that helps students turn those ideas into reality.
+
+Thank you.
+🚀
