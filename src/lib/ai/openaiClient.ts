@@ -109,6 +109,13 @@ export const parseStructuredOutput = (content: string) => {
            componentData: parsed.data
         };
       }
+      if (parsed.summary) {
+        return {
+          text: parsed.summary,
+          component: undefined,
+          componentData: undefined
+        };
+      }
     } catch(e) {}
   }
   return { text: content, component: undefined, componentData: undefined };
