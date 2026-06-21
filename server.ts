@@ -4,7 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { v4 as uuidv4 } from "uuid";
 import OpenAI from "openai";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 async function startServer() {
   const app = express();

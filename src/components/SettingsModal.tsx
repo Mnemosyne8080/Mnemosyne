@@ -1,47 +1,87 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Settings as SettingsIcon, X } from 'lucide-react';
+import { Settings as SettingsIcon, X, Check } from 'lucide-react';
 import { cn } from './utils';
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const { baseUrl, modelName, apiKey, toolsEnabled, setBaseUrl, setModelName, setApiKey, toggleTool } = useAppStore();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [onClose]);
+
+  // Close on backdrop click
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  const toolEntries = Object.entries(toolsEnabled) as [keyof typeof toolsEnabled, boolean][];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className={cn("panel-brutal max-w-md w-full bg-white p-6 max-h-[90vh] overflow-y-auto")}>
-        <div className="flex justify-between items-center mb-6 border-b-4 border-black pb-4">
-          <h2 className="text-2xl font-black uppercase tracking-widest flex items-center gap-2">
-            <SettingsIcon className="w-8 h-8" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={panelRef}
+        className="panel-brutal-static max-w-md w-full bg-[var(--color-surface)] max-h-[90vh] overflow-y-auto animate-slide-up"
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b-2 border-[var(--color-border)]">
+          <h2 className="text-xl font-black uppercase tracking-[0.12em] flex items-center gap-2.5">
+            <SettingsIcon className="w-6 h-6" />
             Config
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-black hover:text-white transition-colors border-2 border-transparent hover:border-black">
-            <X className="w-6 h-6" />
+          <button
+            onClick={onClose}
+            className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-raised)] transition-colors"
+            aria-label="Close settings"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="space-y-6 flex flex-col">
+        {/* Body */}
+        <div className="px-6 py-6 space-y-5">
+          {/* Base URL */}
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">Base URL</label>
+            <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-secondary)] mb-2">
+              Base URL
+            </label>
             <input
               type="text"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               className="input-brutal w-full"
+              placeholder="https://api.openai.com/v1"
             />
           </div>
 
+          {/* Model Name */}
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">Model Name</label>
+            <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-secondary)] mb-2">
+              Model Name
+            </label>
             <input
               type="text"
               value={modelName}
               onChange={(e) => setModelName(e.target.value)}
               className="input-brutal w-full"
+              placeholder="gpt-4o"
             />
           </div>
 
+          {/* API Key */}
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">API Key</label>
+            <label className="block text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-secondary)] mb-2">
+              API Key
+            </label>
             <input
               type="password"
               value={apiKey}
@@ -49,35 +89,49 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               className="input-brutal w-full font-sans"
               placeholder="sk-..."
             />
+            <p className="font-mono text-[10px] text-[var(--color-text-muted)] mt-1.5">
+              Stored locally in your browser.
+            </p>
           </div>
 
-          <div>
-            <h3 className="text-md font-bold uppercase border-b-2 border-black pb-2 mb-4 mt-8">Tools</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {(Object.keys(toolsEnabled) as Array<keyof typeof toolsEnabled>).map((tool) => (
-                <label key={tool} className="flex items-center gap-3 cursor-pointer group">
+          {/* Divider */}
+          <div className="border-t-2 border-[var(--color-border)] pt-5">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--color-text-secondary)] mb-4">
+              Enabled Tools
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {toolEntries.map(([tool, enabled]) => (
+                <label
+                  key={tool}
+                  className="flex items-center gap-2.5 cursor-pointer group py-1"
+                >
                   <div className="relative">
                     <input
                       type="checkbox"
-                      checked={toolsEnabled[tool]}
+                      checked={enabled}
                       onChange={() => toggleTool(tool)}
                       className="peer sr-only"
                     />
-                    <div className="w-6 h-6 border-2 border-black bg-white group-active:bg-gray-200 peer-checked:bg-black transition-colors" />
-                    {toolsEnabled[tool] && (
-                      <div className="absolute inset-0 flex items-center justify-center p-1 pointer-events-none text-white">
-                        <X className="w-4 h-4" /> {/* Not an X really, but let's use a checkmark if possible, or just solid fill */}
-                      </div>
-                    )}
+                    <div className={cn(
+                      "w-5 h-5 border-2 border-[var(--color-border)] bg-[var(--color-surface)] transition-all duration-150 flex items-center justify-center",
+                      enabled && "bg-[var(--color-border)]"
+                    )}>
+                      {enabled && (
+                        <Check className="w-3 h-3 text-[var(--color-base)]" strokeWidth={3} />
+                      )}
+                    </div>
                   </div>
-                  <span className="font-mono text-sm uppercase">{tool.replace('_', ' ')}</span>
+                  <span className="font-mono text-xs uppercase text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
+                    {tool.replace('_', ' ')}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="mt-8 pt-4 border-t-4 border-black text-right">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t-2 border-[var(--color-border)] flex justify-end">
           <button onClick={onClose} className="btn-brutal-dark">
             Done
           </button>
