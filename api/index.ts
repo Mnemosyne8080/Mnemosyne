@@ -9,7 +9,9 @@ import { executeAgents } from '../src/server/agents/index.js';
 // Inline Supabase admin client to avoid import chain issues
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const BASE_URL = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+const BASE_URL = process.env.APP_URL
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+  || `http://localhost:${process.env.PORT || 3000}`;
 
 const supabaseAdmin = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
@@ -81,14 +83,19 @@ app.post('/api/auth/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  const { data, error } = await supabaseAdmin.auth.signUp({ email, password, options: { emailRedirectTo: BASE_URL } });
-  if (error) return res.status(400).json({ error: error.message });
-  if (data.session) {
-    res.cookie('access_token', data.session.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 7 * 1000 });
-    res.cookie('refresh_token', data.session.refresh_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 30 * 1000 });
-    return res.json({ user: data.user, needsConfirmation: false });
+  try {
+    const { data, error } = await supabaseAdmin.auth.signUp({ email, password, options: { emailRedirectTo: BASE_URL } });
+    if (error) return res.status(400).json({ error: error.message });
+    if (data.session) {
+      res.cookie('access_token', data.session.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 7 * 1000 });
+      res.cookie('refresh_token', data.session.refresh_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 30 * 1000 });
+      return res.json({ user: data.user, needsConfirmation: false });
+    }
+    res.json({ user: data.user, needsConfirmation: true });
+  } catch (err: any) {
+    console.error('Signup error:', err);
+    return res.status(500).json({ error: err.message || 'Signup failed' });
   }
-  res.json({ user: data.user, needsConfirmation: true });
 });
 
 // ─── Auth: POST /api/auth/login ───────────────────────────────────────────
@@ -96,11 +103,16 @@ app.post('/api/auth/login', async (req, res) => {
   if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-  const { data, error } = await supabaseAdmin.auth.signInWithPassword({ email, password });
-  if (error) return res.status(401).json({ error: error.message });
-  res.cookie('access_token', data.session.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 7 * 1000 });
-  res.cookie('refresh_token', data.session.refresh_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 30 * 1000 });
-  res.json({ user: data.user });
+  try {
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({ email, password });
+    if (error) return res.status(401).json({ error: error.message });
+    res.cookie('access_token', data.session.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 7 * 1000 });
+    res.cookie('refresh_token', data.session.refresh_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 30 * 1000 });
+    res.json({ user: data.user });
+  } catch (err: any) {
+    console.error('Login error:', err);
+    return res.status(500).json({ error: err.message || 'Login failed' });
+  }
 });
 
 // ─── Auth: POST /api/auth/magic-link ──────────────────────────────────────
@@ -108,9 +120,14 @@ app.post('/api/auth/magic-link', async (req, res) => {
   if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
-  const { error } = await supabaseAdmin.auth.signInWithOtp({ email, options: { emailRedirectTo: BASE_URL } });
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ success: true });
+  try {
+    const { error } = await supabaseAdmin.auth.signInWithOtp({ email, options: { emailRedirectTo: BASE_URL } });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('Magic link error:', err);
+    return res.status(500).json({ error: err.message || 'Magic link failed' });
+  }
 });
 
 // ─── Auth: GET /api/auth/callback ─────────────────────────────────────────
