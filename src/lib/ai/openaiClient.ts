@@ -163,17 +163,35 @@ export const parseStructuredOutput = (content: string) => {
         return {
            text: content.replace(jsonMatch[0], '').trim(),
            component: parsed.component as 'ClarificationForm' | 'RiskMatrix' | 'CompiledBrief' | 'ExecutionBoard',
-           componentData: parsed.data
+           componentData: parsed.data,
+           jsonValid: true
         };
       }
       if (parsed.summary) {
         return {
           text: parsed.summary,
           component: undefined,
-          componentData: undefined
+          componentData: undefined,
+          jsonValid: true
         };
       }
-    } catch(e) {}
+      // JSON parsed but no recognized structure
+      return {
+        text: content.replace(jsonMatch[0], '').trim(),
+        component: undefined,
+        componentData: undefined,
+        jsonValid: true
+      };
+    } catch(e) {
+      // JSON block detected but malformed
+      return {
+        text: content,
+        component: undefined,
+        componentData: undefined,
+        jsonValid: false,
+        jsonBlock: jsonMatch[1]
+      };
+    }
   }
-  return { text: content, component: undefined, componentData: undefined };
+  return { text: content, component: undefined, componentData: undefined, jsonValid: true };
 }

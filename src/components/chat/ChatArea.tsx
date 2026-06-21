@@ -73,17 +73,37 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
        const currentStage = useWorkflowStore.getState().conversations.find(c => c.id === activeConversation.id)?.stage || 'INTAKE';
 
        const rawResponse = await callLLM(currentMessages, settings, currentStage);
-       
-       const { text: responseText, component, componentData } = parseStructuredOutput(rawResponse);
-       
-       setThoughtStream(prev => [...prev, '[SYSTEM] Response parsed successfully.']);
-       
-       addMessage(activeConversation.id, { 
-           role: 'assistant', 
-           content: responseText || '[Structured Data Output]', 
-           component, 
-           componentData 
-       });
+
+       const { text: responseText, component, componentData, jsonValid } = parseStructuredOutput(rawResponse);
+
+       if (jsonValid === false) {
+         // JSON was detected but malformed — ask LLM to reformat
+         setThoughtStream(prev => [...prev, '[SYSTEM] Malformed JSON detected, requesting reformat...']);
+         const reformatted = await callLLM(
+           [
+             ...currentMessages,
+             { id: 'bad-resp', role: 'assistant', content: rawResponse, timestamp: Date.now() },
+             { id: 'fix-req', role: 'user', content: 'Your previous response contained malformed JSON. Please reformat your output as valid JSON wrapped in ```json fences. Do not include any text outside the JSON block.', timestamp: Date.now() + 1 }
+           ],
+           settings,
+           currentStage
+         );
+         const retry = parseStructuredOutput(reformatted);
+         addMessage(activeConversation.id, {
+           role: 'assistant',
+           content: retry.text || '[Structured Data Output]',
+           component: retry.component,
+           componentData: retry.componentData
+         });
+       } else {
+         setThoughtStream(prev => [...prev, '[SYSTEM] Response parsed successfully.']);
+         addMessage(activeConversation.id, {
+           role: 'assistant',
+           content: responseText || '[Structured Data Output]',
+           component,
+           componentData
+         });
+       }
 
        // Stage Advancement Logic based on agent output
        if (currentStage === 'INTAKE') {
