@@ -90,6 +90,7 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
              updateTitle(activeConversation.id, text.slice(0, 30) + '...');
            }
            updateStage(activeConversation.id, 'CLARIFY');
+           handleSend('Please begin the clarification phase.', true);
        }
 
     } catch (e: any) {
