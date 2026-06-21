@@ -102,18 +102,22 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
   };
 
   const handleClarificationSubmit = (responses: Record<string, any>) => {
+    const formatted = Object.entries(responses)
+      .map(([key, value]) => `**${key}:** ${value}`)
+      .join(' | ');
     addMessage(activeConversation.id, {
       role: 'user',
-      content: `Here are my clarifications:\n\n${JSON.stringify(responses, null, 2)}`
+      content: `Clarifications submitted — ${formatted}`
     });
     updateStage(activeConversation.id, 'RESEARCH');
     handleSend('I have submitted the clarification form.', true);
   };
 
   const handleRiskDecision = (decision: string) => {
+    const label = decision === 'ACCEPT_RISKS' ? 'Accepted risks — proceeding to compile' : 'Pivoting strategy based on risks';
     addMessage(activeConversation.id, {
       role: 'user',
-      content: `Human Decision: ${decision}`
+      content: `**Decision:** ${label}`
     });
     if (decision === 'ACCEPT_RISKS') {
         updateStage(activeConversation.id, 'COMPILE');

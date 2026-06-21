@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
 
 interface ClarificationFormProps {
   data: {
@@ -44,33 +45,56 @@ export function ClarificationForm({ data, onSubmit, isSubmitted }: Clarification
               />
             )}
             {q.type === 'radio' && (
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-2">
                 {q.options?.map(opt => (
-                  <label key={opt} className="flex items-center space-x-2 font-mono text-sm cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name={q.id} 
-                      value={opt}
-                      disabled={isSubmitted}
-                      onChange={(e) => setResponses({ ...responses, [q.id]: e.target.value })}
-                      className="w-4 h-4 text-black border-2 border-black focus:ring-black"
-                    />
-                    <span>{opt}</span>
-                  </label>
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={isSubmitted}
+                    onClick={() => setResponses({ ...responses, [q.id]: opt })}
+                    className={cn(
+                      "px-3 py-1.5 font-mono text-sm border-2 border-black transition-all",
+                      responses[q.id] === opt
+                        ? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        : "bg-white text-black hover:bg-gray-100 shadow-[1px_1px_0px_0px_rgba(0,0,0,0.3)]"
+                    )}
+                  >
+                    {opt}
+                  </button>
                 ))}
               </div>
             )}
             {q.type === 'slider' && (
-              <div className="flex items-center space-x-4">
-                <input 
-                  type="range" 
-                  min={q.min} 
-                  max={q.max} 
-                  disabled={isSubmitted}
-                  onChange={(e) => setResponses({ ...responses, [q.id]: e.target.value })}
-                  className="w-full accent-black cursor-pointer"
-                />
-                <span className="font-mono font-bold">{responses[q.id] || q.min}</span>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="range"
+                    min={q.min}
+                    max={q.max}
+                    disabled={isSubmitted}
+                    value={responses[q.id] ?? q.min}
+                    onChange={(e) => setResponses({ ...responses, [q.id]: Number(e.target.value) })}
+                    className="flex-1 accent-black cursor-pointer"
+                  />
+                  <input
+                    type="number"
+                    min={q.min}
+                    max={q.max}
+                    disabled={isSubmitted}
+                    value={responses[q.id] ?? q.min}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val) && val >= (q.min ?? 0) && val <= (q.max ?? Infinity)) {
+                        setResponses({ ...responses, [q.id]: val });
+                      }
+                    }}
+                    className="w-20 px-2 py-1 border-2 border-black font-mono font-bold text-center bg-white focus:outline-none focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-gray-400 uppercase">
+                  <span>{q.min}</span>
+                  <span>{q.max}</span>
+                </div>
               </div>
             )}
           </div>
