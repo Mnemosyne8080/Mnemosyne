@@ -9,8 +9,10 @@ export const callLLM = async (
     throw new Error('API Key is missing. Configure BYOK in SYSTEM CONFIG.');
   }
 
+  const NO_TOOL_CALLS = "\n\nIMPORTANT: Do not use tool calls. Do not output XML tags. Do not output function calls. Output ONLY plain text and JSON code blocks.";
+
   const systemPrompts: Record<WorkflowStage, string> = {
-    INTAKE: `You are the Coordinator Agent. Your task is to take the user's ambiguous initial idea and structure it. Acknowledge their idea and then output a JSON block wrapped in \`\`\`json containing "next_stage": "CLARIFY" and a brief summary. Do not output anything else besides this summary.`,
+    INTAKE: `You are the Coordinator Agent. Your task is to take the user's ambiguous initial idea and structure it. Acknowledge their idea and then output a JSON block wrapped in \`\`\`json containing "next_stage": "CLARIFY" and a brief summary. Do not output anything else besides this summary.` + NO_TOOL_CALLS,
     CLARIFY: `You are the Inquisitor Subagent. You must halt generation and interview the user to clarify assumptions about their idea.
 Generate 3-5 UNIQUE clarification questions tailored to the user's specific idea. Do NOT use generic placeholder questions — every question must be directly relevant to what the user described.
 Output a JSON block wrapped in \`\`\`json representing a ClarificationForm.
@@ -39,7 +41,7 @@ Format:
       { "id": "q4", "type": "boolean", "label": "Do you have existing user research?" }
     ]
   }
-}`,
+}` + NO_TOOL_CALLS,
     RESEARCH: `You are the Analyst Subagent. Generate a Risk Matrix based on the concept.
 Output a JSON block wrapped in \`\`\`json.
 Format:
@@ -53,7 +55,7 @@ Format:
       { "name": "User acquisition", "impact": "Medium", "likelihood": "High", "mitigation": "Content marketing" }
     ]
   }
-}`,
+}` + NO_TOOL_CALLS,
     COMPILE: `You are the Compiler Subagent. Your task is to gather ALL data from the entire conversation context — the original idea, the clarification responses, the risk assessment, and any decisions made — and compile it into a single structured JSON summary.
 Output a JSON block wrapped in \`\`\`json.
 Format:
@@ -68,7 +70,7 @@ Format:
     "risksAccepted": true,
     "researchSummary": "Summary of findings from research phase"
   }
-}`,
+}` + NO_TOOL_CALLS,
     FINALIZER: `You are the Architect Subagent. Using the compiled brief and all prior context, create a comprehensive, actionable execution plan organized as a Kanban board.
 Output a JSON block wrapped in \`\`\`json.
 Format:
@@ -116,7 +118,7 @@ Rules:
 - Use the user's stated budget, timeline, and technical comfort level from clarifications.
 - Scale the plan to the user's available time per week and target launch timeline — a 20+ hour/week plan looks very different from a 2-5 hour/week plan.
 - Include tasks for: setup/infrastructure, core features, content/UX, testing, launch prep, and post-launch growth.
-- Adjust phase durations and task granularity based on the timeline — shorter timelines need fewer, bigger tasks; longer timelines can be more granular.`
+- Adjust phase durations and task granularity based on the timeline — shorter timelines need fewer, bigger tasks; longer timelines can be more granular.` + NO_TOOL_CALLS
   };
 
   const formattedMessages = [
@@ -138,6 +140,7 @@ Rules:
         model: settings.modelName,
         messages: formattedMessages,
         temperature: 0.7,
+        tool_choice: "none",
       }),
     });
 
