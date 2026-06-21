@@ -40,7 +40,7 @@ On first use, open **System Config** (gear icon in the sidebar) and provide:
 
 ## Authentication
 
-Users sign up with a username and password. The system derives an internal email for Supabase auth. An optional email can be added in settings for account recovery.
+Users sign up with a username and password. An optional email can be added in settings for account recovery.
 
 ## Project Structure
 
@@ -69,15 +69,3 @@ src/
 ## Deployment
 
 This project is configured for Vercel deployment. Connect the repository, set the Supabase environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`), and deploy.
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `DISABLE_HMR` | Set to `"true"` to disable HMR (used in AI Studio) |
-
-## License
-
-MIT
