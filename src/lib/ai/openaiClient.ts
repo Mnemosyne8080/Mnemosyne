@@ -24,7 +24,7 @@ Format:
     ]
   }
 }`,
-    STRESS_TEST: `You are the Analyst Subagent. Generate a Risk Matrix based on the concept.
+    RESEARCH: `You are the Analyst Subagent. Generate a Risk Matrix based on the concept.
 Output a JSON block wrapped in \`\`\`json.
 Format:
 {
@@ -38,7 +38,22 @@ Format:
     ]
   }
 }`,
-    FINALIZE: `You are the Architect Subagent. Create a Kanban Execution Board.
+    COMPILE: `You are the Compiler Subagent. Your task is to gather ALL data from the entire conversation context — the original idea, the clarification responses, the risk assessment, and any decisions made — and compile it into a single structured JSON summary.
+Output a JSON block wrapped in \`\`\`json.
+Format:
+{
+  "component": "CompiledBrief",
+  "data": {
+    "idea": "A concise restatement of the core idea",
+    "targetAudience": "Who this is for",
+    "keyDifferentiators": ["point1", "point2"],
+    "constraints": ["constraint1", "constraint2"],
+    "userPreferences": { "key": "value from clarifications" },
+    "risksAccepted": true,
+    "researchSummary": "Summary of findings from research phase"
+  }
+}`,
+    FINALIZER: `You are the Architect Subagent. Create a Kanban Execution Board.
 Output a JSON block wrapped in \`\`\`json.
 Format:
 {
@@ -105,7 +120,7 @@ export const parseStructuredOutput = (content: string) => {
       if (parsed.component) {
         return {
            text: content.replace(jsonMatch[0], '').trim(),
-           component: parsed.component as 'ClarificationForm' | 'RiskMatrix' | 'ExecutionBoard',
+           component: parsed.component as 'ClarificationForm' | 'RiskMatrix' | 'CompiledBrief' | 'ExecutionBoard',
            componentData: parsed.data
         };
       }

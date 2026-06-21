@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Mnemosyne** is a React 19 single-page application built with Vite 6 and styled with Tailwind CSS 4. It is an AI-powered workflow tool that guides users through a structured multi-stage process (Intake → Clarify → Stress Test → Finalize) to develop and validate ideas. The app communicates with OpenAI-compatible LLM endpoints (BYOK — bring your own key) and uses Supabase for authentication.
+**Mnemosyne** is a React 19 single-page application built with Vite 6 and styled with Tailwind CSS 4. It is an AI-powered workflow tool that guides users through a structured multi-stage process (Intake → Clarify → Research → Compile → Finalizer) to develop and validate ideas. The app communicates with OpenAI-compatible LLM endpoints (BYOK — bring your own key) and uses Supabase for authentication.
 
 ## Commands
 
@@ -37,9 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 HMR can be disabled via the `DISABLE_HMR=true` environment variable. This is used in AI Studio environments to prevent flickering during agent edits. Do not modify this behavior in `vite.config.ts`.
 
 ### Core Domain Types (`src/types.ts`)
-- **`WorkflowStage`**: `'INTAKE' | 'CLARIFY' | 'STRESS_TEST' | 'FINALIZE'` — the four stages of the workflow
+- **`WorkflowStage`**: `'INTAKE' | 'CLARIFY' | 'RESEARCH' | 'COMPILE' | 'FINALIZER'` — the five stages of the workflow
 - **`AppSettings`**: `{ baseUrl, apiKey, modelName }` — LLM endpoint configuration
-- **`ChatMessage`**: Messages with optional structured component output (`ClarificationForm`, `RiskMatrix`, `ExecutionBoard`)
+- **`ChatMessage`**: Messages with optional structured component output (`ClarificationForm`, `RiskMatrix`, `CompiledBrief`, `ExecutionBoard`)
 - **`Conversation``: A workflow session with a title, current stage, and message history
 
 ### State Management (Zustand Stores)
@@ -65,8 +65,9 @@ src/components/
     Button.tsx, Card.tsx, Input.tsx, Modal.tsx  — Reusable UI primitives
   widgets/
     ClarificationForm.tsx    — Dynamic form generated from LLM output (CLARIFY stage)
-    RiskMatrix.tsx           — Risk visualization (STRESS_TEST stage)
-    ExecutionBoard.tsx       — Kanban-style execution plan (FINALIZE stage)
+    RiskMatrix.tsx           — Risk visualization (RESEARCH stage)
+    CompiledBrief.tsx        — Compiled project brief (COMPILE stage)
+    ExecutionBoard.tsx       — Kanban-style execution plan (FINALIZER stage)
   workflow/
     StageVisualizer.tsx      — Visual indicator of current workflow stage
 ```

@@ -10,8 +10,9 @@ interface StageVisualizerProps {
 const STAGES: { id: WorkflowStage; label: string }[] = [
   { id: 'INTAKE', label: 'INTAKE' },
   { id: 'CLARIFY', label: 'CLARIFY' },
-  { id: 'STRESS_TEST', label: 'STRESS-TEST' },
-  { id: 'FINALIZE', label: 'FINALIZER' },
+  { id: 'RESEARCH', label: 'RESEARCH' },
+  { id: 'COMPILE', label: 'COMPILE' },
+  { id: 'FINALIZER', label: 'FINALIZER' },
 ];
 
 export function StageVisualizer({ currentStage }: StageVisualizerProps) {

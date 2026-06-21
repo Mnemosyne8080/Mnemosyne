@@ -1,4 +1,4 @@
-export type WorkflowStage = 'INTAKE' | 'CLARIFY' | 'STRESS_TEST' | 'FINALIZE';
+export type WorkflowStage = 'INTAKE' | 'CLARIFY' | 'RESEARCH' | 'COMPILE' | 'FINALIZER';
 
 export interface AppSettings {
   baseUrl: string;
@@ -10,7 +10,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  component?: 'ClarificationForm' | 'RiskMatrix' | 'ExecutionBoard';
+  component?: 'ClarificationForm' | 'RiskMatrix' | 'CompiledBrief' | 'ExecutionBoard';
   componentData?: any;
   timestamp: number;
 }

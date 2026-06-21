@@ -10,6 +10,7 @@ import { Send } from 'lucide-react';
 import { ClarificationForm } from '../widgets/ClarificationForm';
 import { RiskMatrix } from '../widgets/RiskMatrix';
 import { ExecutionBoard } from '../widgets/ExecutionBoard';
+import { CompiledBrief } from '../widgets/CompiledBrief';
 import { callLLM, parseStructuredOutput } from '../../lib/ai/openaiClient';
 import { WorkflowStage } from '../../types';
 
@@ -100,34 +101,40 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
   };
 
   const handleClarificationSubmit = (responses: Record<string, any>) => {
-    addMessage(activeConversation.id, { 
-      role: 'user', 
-      content: `Here are my clarifications:\n\n${JSON.stringify(responses, null, 2)}` 
+    addMessage(activeConversation.id, {
+      role: 'user',
+      content: `Here are my clarifications:\n\n${JSON.stringify(responses, null, 2)}`
     });
-    updateStage(activeConversation.id, 'STRESS_TEST');
+    updateStage(activeConversation.id, 'RESEARCH');
     handleSend('I have submitted the clarification form.', true);
   };
 
   const handleRiskDecision = (decision: string) => {
-    addMessage(activeConversation.id, { 
-      role: 'user', 
-      content: `Human Decision: ${decision}` 
+    addMessage(activeConversation.id, {
+      role: 'user',
+      content: `Human Decision: ${decision}`
     });
     if (decision === 'ACCEPT_RISKS') {
-        updateStage(activeConversation.id, 'FINALIZE');
-        handleSend('I have accepted the risks. Please finalize the execution plan.', true);
+        updateStage(activeConversation.id, 'COMPILE');
+        handleSend('I have accepted the risks. Please compile the project brief.', true);
     } else {
         // Pivot
         handleSend('I want to pivot the strategy based on these risks. Ask me what we should change.', true);
     }
   };
 
+  const handleCompileAccept = () => {
+    updateStage(activeConversation.id, 'FINALIZER');
+    handleSend('The compiled brief looks good. Please create the execution plan.', true);
+  };
+
   const getAgentName = () => {
     switch (activeConversation.stage) {
       case 'INTAKE': return 'COORDINATOR';
       case 'CLARIFY': return 'INQUISITOR';
-      case 'STRESS_TEST': return 'ANALYST';
-      case 'FINALIZE': return 'ARCHITECT';
+      case 'RESEARCH': return 'ANALYST';
+      case 'COMPILE': return 'COMPILER';
+      case 'FINALIZER': return 'ARCHITECT';
       default: return 'SYSTEM';
     }
   };
@@ -175,6 +182,13 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
                 data={message.componentData} 
                 onHumanDecision={handleRiskDecision}
                 decisionMade={activeConversation.messages.findIndex(m => m.id === message.id) !== activeConversation.messages.length - 1} 
+              />
+            )}
+            {message.component === 'CompiledBrief' && (
+              <CompiledBrief
+                data={message.componentData}
+                onAccept={handleCompileAccept}
+                isAccepted={activeConversation.messages.findIndex(m => m.id === message.id) !== activeConversation.messages.length - 1}
               />
             )}
             {message.component === 'ExecutionBoard' && (
