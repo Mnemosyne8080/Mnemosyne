@@ -1,6 +1,6 @@
 # Mnemosyne
 
-A structured workflow application that guides users through a five-stage process — Intake, Clarify, Research, Compile, Finalizer — to develop and validate ideas with the assistance of an LLM.
+A structured workflow application that guides users through a five-stage process - Intake, Clarify, Research, Compile, Finalizer - to develop and validate ideas with the assistance of an LLM.
 
 ## Features
 
@@ -19,7 +19,7 @@ A structured workflow application that guides users through a five-stage process
 - Vite 6 with Tailwind CSS 4
 - Zustand 5 (state management, persisted to localStorage)
 - Supabase JS 2 (authentication)
-- No backend required — all logic runs client-side.
+- No backend required - all logic runs client-side.
 
 ## Getting Started
 
@@ -34,9 +34,9 @@ The app runs on `http://localhost:3000` by default.
 
 On first use, open **System Config** (gear icon in the sidebar) and provide:
 
-1. **API Base URL** — your LLM endpoint (preset dropdown available)
-2. **API Key** — your provider key (stored locally in the browser)
-3. **Model Name** — the model to use
+1. **API Base URL** - your LLM endpoint (preset dropdown available)
+2. **API Key** - your provider key (stored locally in the browser)
+3. **Model Name** - the model to use
 
 ## Authentication
 
