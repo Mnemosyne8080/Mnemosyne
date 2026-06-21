@@ -116,7 +116,11 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
        if (currentStage === 'INTAKE') {
            if (activeConversation.messages.length <= 1) {
              const titleText = responseText || text;
-             const cleanTitle = titleText.replace(/\*\*/g, '').replace(/\n/g, ' ').trim();
+             const cleanTitle = titleText
+               .replace(/```[\s\S]*?```/g, '')
+               .replace(/[*_`#[\]{}|]/g, '')
+               .replace(/\s+/g, ' ')
+               .trim();
              updateTitle(activeConversation.id, cleanTitle.slice(0, 50));
              const titleResponse = await callLLM(
                [
@@ -126,7 +130,12 @@ export function ChatArea({ onOpenSettings }: ChatAreaProps) {
                settings,
                currentStage
              );
-             const shortTitle = titleResponse.replace(/["\n]/g, '').trim().slice(0, 30);
+             const shortTitle = titleResponse
+               .replace(/```[\s\S]*?```/g, '')   // remove code blocks
+               .replace(/[*_`#[\]{}|]/g, '')      // remove markdown chars
+               .replace(/\s+/g, ' ')              // collapse whitespace
+               .trim()
+               .slice(0, 30);
              if (shortTitle && shortTitle.length > 1) {
                updateTitle(activeConversation.id, shortTitle);
              }
