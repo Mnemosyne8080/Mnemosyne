@@ -38,8 +38,9 @@ export function AuthPage() {
       } else {
         const { error } = await supabase.auth.signUp({ email: derivedEmail, password });
         if (error) throw error;
-        alert('Account created! You can now log in.');
         setIsLogin(true);
+        setUsername('');
+        setPassword('');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
