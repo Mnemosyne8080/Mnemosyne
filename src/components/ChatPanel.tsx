@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAppStore } from '../store';
 import { Settings as SettingsIcon, Send, Terminal, Sparkles, Zap, LogOut, Copy, Check } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { addMessage as saveMessageToDb } from '../lib/supabase/services';
 import { PromptSuggestions } from './PromptSuggestions';
 
 interface ChatPanelProps {
@@ -35,12 +34,16 @@ export function ChatPanel({ openSettings, onNewChat, onOpenWorkflows, onLogout, 
     async (msg: { id: string; role: 'user' | 'assistant'; content: string; agent?: string; options?: string[] }) => {
       if (currentConversationId && user) {
         try {
-          await saveMessageToDb({
-            conversationId: currentConversationId,
-            role: msg.role,
-            content: msg.content,
-            agent: msg.agent,
-            options: msg.options || null,
+          await fetch(`/api/conversations/${currentConversationId}/messages`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              role: msg.role,
+              content: msg.content,
+              agent: msg.agent,
+              options: msg.options || null,
+            }),
           });
         } catch (err) {
           console.error('Failed to save message:', err);

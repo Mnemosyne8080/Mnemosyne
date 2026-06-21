@@ -2,7 +2,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import OpenAI from 'openai';
+import { executeAgents } from '../src/server/agents/index.js';
 
 // Inline Supabase admin client to avoid import chain issues
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
@@ -49,7 +51,6 @@ async function authMiddleware(req: any, res: any, next: any) {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
     if (!error && user) { req.user = user; return next(); }
   }
-  // Try refresh
   const refreshToken = req.cookies?.refresh_token;
   if (refreshToken && supabaseAdmin) {
     try {
@@ -153,11 +154,134 @@ app.get('/api/auth/user', async (req, res) => {
   res.json({ user });
 });
 
+// ─── Conversations CRUD ────────────────────────────────────────────────────
+
+// List conversations for current user
+app.get('/api/conversations', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('conversations').select('*').eq('user_id', userId).order('updated_at', { ascending: false });
+    if (error) throw error;
+    res.json({ conversations: data || [] });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Create conversation
+app.post('/api/conversations', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('conversations')
+      .insert({ user_id: userId, title: req.body.title || 'New Conversation', parent_id: req.body.parent_id || null })
+      .select().single();
+    if (error) throw error;
+    res.json({ conversation: data });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Update conversation (rename)
+app.patch('/api/conversations/:id', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('conversations')
+      .update({ title: req.body.title, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id).eq('user_id', userId).select().single();
+    if (error) throw error;
+    res.json({ conversation: data });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Delete conversation
+app.delete('/api/conversations/:id', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { error } = await supabaseAdmin
+      .from('conversations').delete().eq('id', req.params.id).eq('user_id', userId);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Get messages for a conversation
+app.get('/api/conversations/:id/messages', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    // Verify the conversation belongs to the user
+    const { data: conv, error: convErr } = await supabaseAdmin
+      .from('conversations').select('id').eq('id', req.params.id).eq('user_id', userId).single();
+    if (convErr || !conv) return res.status(404).json({ error: 'Conversation not found' });
+    const { data, error } = await supabaseAdmin
+      .from('messages').select('*').eq('conversation_id', req.params.id).order('timestamp', { ascending: true });
+    if (error) throw error;
+    res.json({ messages: data || [] });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Add a message to a conversation
+app.post('/api/conversations/:id/messages', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data: conv, error: convErr } = await supabaseAdmin
+      .from('conversations').select('id').eq('id', req.params.id).eq('user_id', userId).single();
+    if (convErr || !conv) return res.status(404).json({ error: 'Conversation not found' });
+    const { data, error } = await supabaseAdmin
+      .from('messages')
+      .insert({
+        conversation_id: req.params.id,
+        role: req.body.role,
+        content: req.body.content,
+        agent: req.body.agent || null,
+        options: req.body.options || null,
+        parent_message_id: req.body.parent_message_id || null,
+      })
+      .select().single();
+    if (error) throw error;
+    res.json({ message: data });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Get plan for a conversation
+app.get('/api/conversations/:id/plan', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('plans').select('*').eq('conversation_id', req.params.id).eq('user_id', userId).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    res.json({ plan: data || null });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// Upsert plan for a conversation
+app.post('/api/conversations/:id/plan', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const userId = (req as any).user.id;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('plans')
+      .upsert({
+        conversation_id: req.params.id,
+        user_id: userId,
+        plan_data: req.body.plan || {},
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'conversation_id' })
+      .select().single();
+    if (error) throw error;
+    res.json({ plan: data });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 // ─── Chat: POST /api/chat (protected) ──────────────────────────────────────
 app.post('/api/chat', authMiddleware, async (req, res) => {
-  // Dynamic import to avoid bundling OpenAI in the function init
   try {
-    const { default: OpenAI } = await import('openai');
     const { messages, baseUrl, model, apiKey, currentPlan } = req.body;
     if (!messages?.length) return res.status(400).json({ error: 'Messages required' });
     if (!apiKey) return res.status(400).json({ error: 'API Key required' });
@@ -166,7 +290,6 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     const sendEvent = (event: string, data: any) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     const openai = new OpenAI({ apiKey, baseURL: baseUrl || 'https://api.openai.com/v1' });
-    const { executeAgents } = await import('../src/server/agents/index.ts');
     await executeAgents({ openai, model: model || 'gpt-4o', messages, sendEvent, plan: currentPlan });
     res.end();
   } catch (error: any) {
@@ -191,10 +314,34 @@ app.post('/api/workflows', authMiddleware, async (req, res) => {
   if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
   const userId = (req as any).user.id;
   try {
-    const { data, error } = await supabaseAdmin.from('workflows').insert({ user_id: userId, config: req.body.config || {} }).select().single();
+    const { data, error } = await supabaseAdmin.from('workflows').insert({ user_id: userId, conversation_id: req.body.conversation_id || null, config: req.body.config || {} }).select().single();
     if (error) throw error;
     res.json({ workflow: data });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/workflows/start', authMiddleware, async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'Supabase not configured' });
+  const { workflowId, baseUrl, model, apiKey, config, context } = req.body;
+  if (!apiKey) return res.status(400).json({ error: 'API Key required' });
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  const sendEvent = (event: string, data: any) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  // Lazy import runner to keep init light
+  const { executeWorkflow, cancelWorkflow: _ } = await import('../src/server/workflows/runner.js');
+  try {
+    const { data: wfData, error: wfError } = await supabaseAdmin.from('workflows').select('*').eq('id', workflowId).single();
+    if (wfError || !wfData) throw new Error('Workflow not found');
+    const workflow = { id: wfData.id, title: wfData.title, status: wfData.status, config: config || wfData.config, subagents: wfData.subagents || [], results: wfData.results || {}, createdAt: wfData.created_at, updatedAt: wfData.updated_at };
+    const openai = new OpenAI({ apiKey, baseURL: baseUrl || 'https://api.openai.com/v1' });
+    await executeWorkflow(workflow, openai, model || 'gpt-4o', { ...context, userId: (req as any).user.id, conversationId: wfData.conversation_id }, res);
+    res.end();
+  } catch (error: any) {
+    console.error('Workflow error:', error);
+    sendEvent('workflow_error', { workflowId, error: error.message || 'An error occurred' });
+    res.end();
+  }
 });
 
 app.get('/api/workflows/:id', authMiddleware, async (req, res) => {

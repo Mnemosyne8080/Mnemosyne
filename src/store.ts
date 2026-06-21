@@ -1,7 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Conversation, Message as DbMessage, Plan as DbPlan, Workflow as DbWorkflow } from './lib/supabase/services';
-import * as services from './lib/supabase/services';
 import type { Workflow, WorkflowConfig } from './lib/workflows/types';
 
 export interface Message {
@@ -31,6 +29,15 @@ export interface User {
   avatar_url?: string;
   full_name?: string;
   user_metadata?: any;
+}
+
+export interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AppState {
@@ -82,6 +89,7 @@ interface AppState {
   deleteConversation: (id: string) => Promise<void>;
   renameConversation: (id: string, title: string) => Promise<void>;
   branchConversation: (fromMessageId: string, newTitle?: string) => Promise<string | null>;
+  loadConversations: () => Promise<void>;
 
   // Plan view
   setPlanView: (view: 'roadmap' | 'graph') => void;
@@ -107,6 +115,15 @@ const emptyPlan: Plan = {
   workspace: [],
   sources: [],
 };
+
+async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const resp = await fetch(url, { credentials: 'include', ...init });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error ?? `${resp.status} ${resp.statusText}`);
+  }
+  return resp.json() as Promise<T>;
+}
 
 export const useAppStore = create<AppState>()(
   persist(
@@ -195,9 +212,20 @@ export const useAppStore = create<AppState>()(
       setCurrentConversationId: (id) => set({ currentConversationId: id }),
       setConversations: (conversations) => set({ conversations }),
 
+      loadConversations: async () => {
+        const user = get().user;
+        if (!user) return;
+        try {
+          const { conversations } = await api<{ conversations: Conversation[] }>('/api/conversations');
+          set({ conversations });
+        } catch (err) {
+          console.error('Failed to load conversations:', err);
+        }
+      },
+
       loadConversation: async (id) => {
         try {
-          const dbMessages = await services.getMessages(id);
+          const { messages: dbMessages } = await api<{ messages: any[] }>(`/api/conversations/${id}/messages`);
           const messages: Message[] = dbMessages.map((m) => ({
             id: m.id,
             role: m.role as 'user' | 'assistant',
@@ -209,7 +237,7 @@ export const useAppStore = create<AppState>()(
           set({ messages });
 
           // Also load plan for this conversation
-          const dbPlan = await services.getPlan(id);
+          const { plan: dbPlan } = await api<{ plan: any }>(`/api/conversations/${id}/plan`);
           if (dbPlan?.plan_data && Object.keys(dbPlan.plan_data).length > 0) {
             set((state) => ({
               plan: { ...state.plan, ...dbPlan.plan_data },
@@ -224,14 +252,18 @@ export const useAppStore = create<AppState>()(
         const user = get().user;
         if (!user) return null;
         try {
-          const conv = await services.createConversation(user.id);
+          const { conversation } = await api<{ conversation: Conversation }>('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: 'New Conversation' }),
+          });
           set((state) => ({
-            conversations: [conv, ...state.conversations],
-            currentConversationId: conv.id,
+            conversations: [conversation, ...state.conversations],
+            currentConversationId: conversation.id,
             messages: [],
             plan: { ...emptyPlan },
           }));
-          return conv.id;
+          return conversation.id;
         } catch (err) {
           console.error('Failed to create conversation:', err);
           return null;
@@ -240,7 +272,7 @@ export const useAppStore = create<AppState>()(
 
       deleteConversation: async (id) => {
         try {
-          await services.deleteConversation(id);
+          await api(`/api/conversations/${id}`, { method: 'DELETE' });
           set((state) => ({
             conversations: state.conversations.filter((c) => c.id !== id),
             currentConversationId:
@@ -253,7 +285,11 @@ export const useAppStore = create<AppState>()(
 
       renameConversation: async (id, title) => {
         try {
-          await services.updateConversation(id, { title });
+          await api(`/api/conversations/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title }),
+          });
           set((state) => ({
             conversations: state.conversations.map((c) =>
               c.id === id ? { ...c, title } : c
@@ -270,35 +306,40 @@ export const useAppStore = create<AppState>()(
         if (!user || !currentConvId) return null;
 
         try {
-          // Find the index of the fromMessage
           const messages = get().messages;
           const fromIndex = messages.findIndex((m) => m.id === fromMessageId);
           if (fromIndex < 0) return null;
-
           const messagesToCopy = messages.slice(0, fromIndex + 1);
 
           // Create new conversation with parent
-          const newConv = await services.createConversation(
-            user.id,
-            newTitle || 'Branch',
-            currentConvId
-          );
+          const { conversation: newConv } = await api<{ conversation: Conversation }>('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: newTitle || 'Branch', parent_id: currentConvId }),
+          });
 
           // Copy messages
           for (const msg of messagesToCopy) {
-            await services.addMessage({
-              conversationId: newConv.id,
-              role: msg.role,
-              content: msg.content,
-              agent: msg.agent,
-              options: msg.options,
+            await api(`/api/conversations/${newConv.id}/messages`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                role: msg.role,
+                content: msg.content,
+                agent: msg.agent,
+                options: msg.options,
+              }),
             });
           }
 
           // Copy plan
           const plan = get().plan;
           if (plan && (plan.idea || plan.milestones?.length)) {
-            await services.upsertPlan(newConv.id, user.id, plan);
+            await api(`/api/conversations/${newConv.id}/plan`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ plan }),
+            });
           }
 
           set((state) => ({
@@ -337,8 +378,12 @@ export const useAppStore = create<AppState>()(
         if (!user) return;
 
         try {
-          // Create workflow in DB
-          const dbWf = await services.createWorkflow(user.id, currentConversationId, config);
+          // Create workflow via API
+          const { workflow: dbWf } = await api<{ workflow: any }>('/api/workflows', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ config, conversation_id: currentConversationId }),
+          });
           const workflow: Workflow = {
             id: dbWf.id,
             title: `${config.type.charAt(0).toUpperCase() + config.type.slice(1)} Workflow`,
@@ -358,6 +403,7 @@ export const useAppStore = create<AppState>()(
 
           const response = await fetch('/api/workflows/start', {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               workflowId: workflow.id,
@@ -370,7 +416,6 @@ export const useAppStore = create<AppState>()(
                 plan: get().plan,
                 messages: get().messages,
               },
-              credentials: 'include',
             }),
           });
 
@@ -402,11 +447,8 @@ export const useAppStore = create<AppState>()(
               }
 
               if (eventType === 'workflow_subagent_start') {
-                get().updateWorkflow(data.workflowId, {
-                  status: 'running',
-                });
+                get().updateWorkflow(data.workflowId, { status: 'running' });
               } else if (eventType === 'workflow_subagent_complete') {
-                // Update subagent result
                 const wf = get().workflows.find((w) => w.id === data.workflowId);
                 if (wf) {
                   const updatedSubagents = (wf.subagents || []).map((sa) =>
